@@ -68,11 +68,15 @@ Apify.main(async () => {
                 const offers = await page.evaluate(() => {
                     const parsed = [];
                     $('div#olpOfferList div.olpOffer').each((_index, offer) => {
+                        let shipping = $(offer).find('.olpShippingInfo').text().trim();
+                        const match = shipping.match(/& (FREE) Shipping/);
+                        shipping = match ? match[1] : shipping;
+
                         parsed.push({
                             offer: $(offer).find('span.olpOfferPrice').text().trim(),
                             condition: $(offer).find('span.olpCondition').text().trim(),
                             seller_name: $(offer).find('h3.olpSellerName').text().trim(),
-                            shipping: $(offer).find('.olpShippingInfo').text().trim(),
+                            shipping,
                         });
                     });
                     return parsed;
