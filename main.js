@@ -12,12 +12,23 @@ Apify.main(async () => {
         },
     });
 
+    const saved = await Apify.getValue('OUTPUT') || {};
+    const itemCount = {};
+    setInterval(() => {
+        console.log(saved);
+    }, 20000);
+
     const crawler = new Apify.PuppeteerCrawler({
         requestQueue,
         maxRequestRetries: 2,
         maxRequestsPerCrawl: 100,
         maxConcurrency: 10,
-        handlePageFunction: async ({ request, page, $ }) => {
+        useSessionPool: true,
+        retireInstanceAfterRequestCount: 5,
+        proxyUrl: `http://${process.env.APIFY_PROXY_USERNAME}:`
+                + `${process.env.APIFY_PROXY_PASSWORD}@localhost:8000`,
+        handlePageFunction: async ({ request, page, $, session, response }) => {
+            if (!response.ok()) { session.retire(); }
             const { label } = request.userData;
 
             if (label === 'search') {
@@ -83,6 +94,12 @@ Apify.main(async () => {
                 });
 
                 offers.forEach(async (offer) => {
+                    const asin = request.userData.item.itemUrl.match(/dp\/(.*)\//)[1];
+                    if (asin) {
+                        if (asin in itemCount) {
+                            ++itemCount[asin];
+                        } else { itemCount[asin] = 1; }
+                    }
                     offer = { ...offer, ...request.userData.item };
                     await Apify.pushData(offer);
                 });
@@ -96,4 +113,9 @@ Apify.main(async () => {
         },
     });
     await crawler.run();
+
+    let d = new Date();
+    d = d.toUTCString();
+    saved[d] = itemCount;
+    await Apify.setValue('OUTPUT', saved);
 });

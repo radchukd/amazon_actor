@@ -2,6 +2,9 @@
 	"name": "amazon-actor",
 	"version": "0.0",
 	"buildTag": "latest",
-	"env": null,
+	"env": {
+    "APIFY_PROXY_USERNAME": "@proxyUsername",
+    "APIFY_PROXY_PASSWORD": "@proxypassword"
+  },
 	"template": "puppeteer_crawler"
 }
