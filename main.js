@@ -12,8 +12,6 @@ Apify.main(async () => {
         },
     });
 
-    const items = [];
-
     const crawler = new Apify.PuppeteerCrawler({
         requestQueue,
         maxRequestRetries: 2,
@@ -53,6 +51,7 @@ Apify.main(async () => {
                 });
                 let asin = request.url.match(/dp\/(.*)\//);
                 asin = asin ? asin[1] : null;
+                if (!asin) { return; }
                 item.itemUrl = request.url;
                 item.keyword = keyword;
 
@@ -71,6 +70,7 @@ Apify.main(async () => {
                         let shipping = $(offer).find('.olpShippingInfo').text().trim();
                         const match = shipping.match(/& (FREE) Shipping/);
                         shipping = match ? match[1] : shipping;
+                        shipping = shipping === '' ? 'included' : shipping;
 
                         parsed.push({
                             offer: $(offer).find('span.olpOfferPrice').text().trim(),
@@ -81,10 +81,11 @@ Apify.main(async () => {
                     });
                     return parsed;
                 });
-                offers.map((item) => {
-                    Object.assign(item, request.userData.item);
+
+                offers.forEach(async (offer) => {
+                    offer = { ...offer, ...request.userData.item };
+                    await Apify.pushData(offer);
                 });
-                items.push(...offers);
             }
         },
         handleFailedRequestFunction: async ({ request }) => {
@@ -95,7 +96,4 @@ Apify.main(async () => {
         },
     });
     await crawler.run();
-    await Apify.pushData({
-        items,
-    });
 });
