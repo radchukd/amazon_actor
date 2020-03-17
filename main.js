@@ -93,16 +93,16 @@ Apify.main(async () => {
                     return parsed;
                 });
 
-                offers.forEach(async (offer) => {
+                for (let i = 0; i < offers.length; ++i) {
                     const asin = request.userData.item.itemUrl.match(/dp\/(.*)\//)[1];
                     if (asin) {
                         if (asin in itemCount) {
                             ++itemCount[asin];
                         } else { itemCount[asin] = 1; }
                     }
-                    offer = { ...offer, ...request.userData.item };
-                    await Apify.pushData(offer);
-                });
+                    offers[i] = { ...offers[i], ...request.userData.item };
+                    await Apify.pushData(offers[i]);
+                }
             }
         },
         handleFailedRequestFunction: async ({ request }) => {
